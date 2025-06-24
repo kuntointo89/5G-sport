@@ -1,70 +1,74 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class ECGGraph : MonoBehaviour
 {
     public RawImage graphImage;
-    public Color lineColor = Color.green;
-    public int textureWidth = 512;
-    public int textureHeight = 128;
+    public int width = 300;
+    public int height = 100;
+    public Color graphColor = Color.green;
 
-    private Texture2D ecgTexture;
+    private Texture2D texture;
 
     public void DrawECG(List<int> samples)
     {
-        if (graphImage == null || samples == null || samples.Count < 1)
+        if (graphImage == null)
         {
-            Debug.LogWarning("ECGGraph: Graph image or sample data missing.");
+            Debug.LogWarning("ECGGraph: Graph RawImage not assigned.");
             return;
         }
 
-        // Create texture
-        if (ecgTexture == null || ecgTexture.width != textureWidth || ecgTexture.height != textureHeight)
+        if (samples == null || samples.Count == 0)
         {
-            ecgTexture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
-            ecgTexture.filterMode = FilterMode.Point;
+            Debug.LogWarning("ECGGraph: Sample data missing or empty.");
+            return;
         }
 
-        // Clear texture
-        Color clearColor = new Color(0, 0, 0, 0);
-        Color[] clearPixels = new Color[textureWidth * textureHeight];
-        for (int i = 0; i < clearPixels.Length; i++)
-            clearPixels[i] = clearColor;
-        ecgTexture.SetPixels(clearPixels);
+        Debug.Log($"ECGGraph: Drawing {samples.Count} samples.");
 
-        // Normalize and draw ECG waveform
-        float maxSample = Mathf.Max(Mathf.Abs((float)System.Linq.Enumerable.Max(samples)), 1f);
-        int sampleCount = samples.Count;
-        float xStep = (float)textureWidth / sampleCount;
-
-        for (int i = 1; i < sampleCount; i++)
+        if (texture == null || texture.width != width || texture.height != height)
         {
-            float x0 = (i - 1) * xStep;
-            float x1 = i * xStep;
-
-            float y0 = (samples[i - 1] / maxSample) * textureHeight / 2f + textureHeight / 2f;
-            float y1 = (samples[i] / maxSample) * textureHeight / 2f + textureHeight / 2f;
-
-            DrawLine((int)x0, (int)y0, (int)x1, (int)y1, lineColor);
+            texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            texture.filterMode = FilterMode.Point;
+            graphImage.texture = texture;
         }
 
-        ecgTexture.Apply();
-        graphImage.texture = ecgTexture;
+        ClearTexture();
+
+        float maxSample = Mathf.Max(samples.ToArray());
+        float scale = height / (maxSample > 0 ? maxSample : 1f);
+
+        for (int i = 1; i < samples.Count; i++)
+        {
+            int x0 = Mathf.FloorToInt((i - 1) / (float)samples.Count * width);
+            int y0 = Mathf.FloorToInt(samples[i - 1] * scale);
+            int x1 = Mathf.FloorToInt(i / (float)samples.Count * width);
+            int y1 = Mathf.FloorToInt(samples[i] * scale);
+
+            DrawLine(texture, x0, y0, x1, y1, graphColor);
+        }
+
+        texture.Apply();
     }
 
-    void DrawLine(int x0, int y0, int x1, int y1, Color color)
+    void ClearTexture()
     {
-        int dx = Mathf.Abs(x1 - x0);
-        int dy = Mathf.Abs(y1 - y0);
-        int sx = x0 < x1 ? 1 : -1;
-        int sy = y0 < y1 ? 1 : -1;
+        Color32[] clearPixels = new Color32[width * height];
+        for (int i = 0; i < clearPixels.Length; i++) clearPixels[i] = Color.clear;
+        texture.SetPixels32(clearPixels);
+    }
+
+    void DrawLine(Texture2D tex, int x0, int y0, int x1, int y1, Color col)
+    {
+        int dx = Mathf.Abs(x1 - x0), dy = Mathf.Abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
         int err = dx - dy;
 
         while (true)
         {
-            if (x0 >= 0 && x0 < textureWidth && y0 >= 0 && y0 < textureHeight)
-                ecgTexture.SetPixel(x0, y0, color);
+            if (x0 >= 0 && x0 < tex.width && y0 >= 0 && y0 < tex.height)
+                tex.SetPixel(x0, y0, col);
 
             if (x0 == x1 && y0 == y1) break;
             int e2 = 2 * err;

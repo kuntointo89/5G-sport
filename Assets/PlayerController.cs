@@ -76,6 +76,15 @@ public class PlayerController : MonoBehaviour
 
         if (!isActive)
         {
+            if (ecgData?.Samples != null)
+        {
+            Debug.Log($"{gameObject.name} ECG sample count: {ecgData.Samples.Count}");
+            Debug.Log($"First few samples: {string.Join(", ", ecgData.Samples.GetRange(0, Mathf.Min(10, ecgData.Samples.Count)))}");
+        }
+        else
+        {
+            Debug.LogWarning($"{gameObject.name} has no ECG sample data.");
+        }
             // Only update stats if showing panel
             string rrString = heartData?.rrData != null ? string.Join(", ", heartData.rrData) : "N/A";
             string ecgString = ecgData?.Samples != null ? $"{ecgData.Samples.Count} samples" : "N/A";

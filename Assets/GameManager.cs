@@ -43,6 +43,7 @@ public class GameManager : MonoBehaviour
             PlayerController pc = player.GetComponent<PlayerController>();
             pc.path = normalizedPath;
             pc.heartData = sensor.HR;
+            pc.ecgData = sensor.ECG;
             pc.statsText = statsText;
             pc.statsPanel = statsPanelInstance;
         }

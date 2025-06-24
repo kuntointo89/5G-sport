@@ -28,11 +28,13 @@ public class ECGData {
 }
 
 [System.Serializable]
-public class Sensor {
+public class Sensor
+{
     public int sensorId;
     public HRData HR;
     public IMU9 IMU9;
     public List<GNSSPoint> GNSS;
+    public ECGData ECG;
 }
 
 [System.Serializable]
