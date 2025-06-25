@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
+
+// This scripts main purpose is to control the movement of the players
+
 public class PlayerController : MonoBehaviour
 {
     // UI elements for displaying stats
@@ -80,6 +83,9 @@ public class PlayerController : MonoBehaviour
     }
 
     void OnMouseDown()
+
+        //When a player is clicked, a panel will be displayed. When clicked again, the panel will disappear.
+    
     {
         if (statsPanel == null)
         {
@@ -93,6 +99,7 @@ public class PlayerController : MonoBehaviour
 
         if (!isActive)
         {
+            // Populate stats when panel is shown
             if (ecgData?.Samples != null)
             {
                 Debug.Log($"{gameObject.name} ECG sample count: {ecgData.Samples.Count}");
@@ -110,6 +117,8 @@ public class PlayerController : MonoBehaviour
                              $"HR Avg: {heartData?.average:F1}\n" +
                              $"RR: {rrString}\n" +
                              $"ECG: {ecgString}";
+
+            // Attempt to draw ECG Graph
 
             var ecgGraph = statsPanel.GetComponentInChildren<ECGGraph>();
             if (ecgGraph != null && ecgData?.Samples != null)

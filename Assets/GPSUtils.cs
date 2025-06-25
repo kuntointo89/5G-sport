@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+// This scripts converts data to meters and keeps the players inside the rink
+
 public static class GPSUtils
 {
 
@@ -32,7 +35,7 @@ public static class GPSUtils
         return new Vector2((float)(sumLat / points.Count), (float)(sumLon / points.Count));
     }
 
-    // Scales a path to ensure the total length does not exceed maxPathLength
+    // Scales a path to ensure the total length does not exceed maxPathLength, in other words, keeps the players inside the hockey rink
     public static List<Vector2> NormalizePath(List<Vector2> path, float maxPathLength)
     {
         float totalLength = 0f;

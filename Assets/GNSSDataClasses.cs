@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Numerics;
 
+// This script lists all data from the sensors and creates lists from them.
+
 [System.Serializable]
 public class GNSSPoint
 {
@@ -35,7 +37,7 @@ public class Sensor
 {
     public int sensorId;          // Sensor unique identifier
     public HRData HR;             // Heart rate data
-    public IMU9 IMU9;             // Motion sensor data
+    public IMU9 IMU9;             // // IMU data: typically includes acceleration (m/s²), angular velocity (rad/s), and orientation (quaternion or Euler angles)
     public List<GNSSPoint> GNSS;  // Position data
     public ECGData ECG; // Electrocardiogram data (raw ECG signal samples)
 }

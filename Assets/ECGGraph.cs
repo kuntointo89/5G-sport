@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
+
+// This code simulates ECGGraph from the given (mock)data (25.6.2025)
+
 public class ECGGraph : MonoBehaviour
 {
     public RawImage graphImage;                // UI element to display the ECG graph
@@ -37,17 +40,17 @@ public class ECGGraph : MonoBehaviour
 
         ClearTexture(); // Clear previous frame
 
-        float maxSample = Mathf.Max(samples.ToArray());           // Get max sample for scaling
-        float scale = height / (maxSample > 0 ? maxSample : 1f);  // Avoid divide-by-zero
+        float maxSample = Mathf.Max(samples.ToArray());           // Get maximum amount of samples for scaling
+        float scale = height / (maxSample > 0 ? maxSample : 1f);  // Avoiding divide-by-zero
 
         for (int i = 1; i < samples.Count; i++)
         {
-            int x0 = Mathf.FloorToInt((i - 1) / (float)samples.Count * width);     // Previous x
-            int y0 = Mathf.FloorToInt(samples[i - 1] * scale);                     // Previous y
-            int x1 = Mathf.FloorToInt(i / (float)samples.Count * width);          // Current x
-            int y1 = Mathf.FloorToInt(samples[i] * scale);                         // Current y
+            int x0 = Mathf.FloorToInt((i - 1) / (float)samples.Count * width);     // Previous x-axel
+            int y0 = Mathf.FloorToInt(samples[i - 1] * scale);                     // Previous y-axel
+            int x1 = Mathf.FloorToInt(i / (float)samples.Count * width);          // Current x-axel
+            int y1 = Mathf.FloorToInt(samples[i] * scale);                         // Current y-axel
 
-            DrawLine(texture, x0, y0, x1, y1, graphColor); // Draw line segment
+            DrawLine(texture, x0, y0, x1, y1, graphColor); // Drawing the line diagram for ECG
         }
 
         texture.Apply(); // Apply all pixel changes
@@ -62,7 +65,7 @@ public class ECGGraph : MonoBehaviour
 
     void DrawLine(Texture2D tex, int x0, int y0, int x1, int y1, Color col)
     {
-        int dx = Mathf.Abs(x1 - x0), dy = Mathf.Abs(y1 - y0);    // Deltas
+        int dx = Mathf.Abs(x1 - x0), dy = Mathf.Abs(y1 - y0);    // Delta points
         int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;         // Step directions
         int err = dx - dy;                                       // Error term
 

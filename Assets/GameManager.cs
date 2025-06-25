@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.UI;
 
+//This script ensures that the data can be used in the application.
+
 public class GameManager : MonoBehaviour
 {
     public GameObject playerPrefab;

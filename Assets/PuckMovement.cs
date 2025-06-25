@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// This scripts main purpose is to control the movement of the puck
+
 public class PuckMovement : MonoBehaviour
 {
     public float speed = 10f;
