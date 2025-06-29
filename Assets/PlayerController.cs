@@ -134,5 +134,14 @@ public class PlayerController : MonoBehaviour
         // Visual indication of speed via color
         float t = Mathf.InverseLerp(minSpeed, maxSpeed, currentSpeed);
         GetComponent<SpriteRenderer>().color = Color.Lerp(Color.blue, Color.red, t);
+
+        // Compute and apply rotation to the player
+        Vector2 movementDir = (targetPosition - (Vector2)transform.position).normalized;
+
+        if (movementDir.sqrMagnitude > 0.0001f)
+        {
+            float angle = Mathf.Atan2(movementDir.y, movementDir.x) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        }
     }
 }

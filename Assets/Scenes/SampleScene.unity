@@ -3832,6 +3832,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7906263533384959604, guid: 60cca6d32d8ac3549b8f705ac10cb9b4, type: 3}
+      propertyPath: m_Name
+      value: DirectionArrow
+      objectReference: {fileID: 0}
     - target: {fileID: 8897702063038273494, guid: 60cca6d32d8ac3549b8f705ac10cb9b4, type: 3}
       propertyPath: statsText
       value: 
