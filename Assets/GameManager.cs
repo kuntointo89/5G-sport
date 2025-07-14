@@ -13,7 +13,7 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         // Load JSON data from Resources folder
-        TextAsset jsonFile = Resources.Load<TextAsset>("match_data");
+        TextAsset jsonFile = Resources.Load<TextAsset>("match_data2");
         Root data = JsonUtility.FromJson<Root>(jsonFile.text);
 
         //  Gather all GNSS points for center calculation
