@@ -5,19 +5,29 @@ using TMPro;
 public class PlayerController : MonoBehaviour
 {
     // UI & Stats
+    [Header("Player Properties")]
     public TMP_Text statsText;
     public GameObject statsPanel;
-    public string playerId;
+    public string player_name;
+
+    // Smooth movement settings
+    private Vector2 targetPosition;
+    private Vector2 velocity; 
+    public float smoothTime = 1.0f; // smaller = snappier, larger = smoother
+
+    [Header("Movement Speeds (km/h)")]
+    [SerializeField] private float minSpeed = 5f;   // User sets this in inspector (km/h or m/s)
+    [SerializeField] private float maxSpeed = 25f;  // User sets this in inspector (km/h or m/s)
+    [SerializeField] private bool valuesAreInKmh = true;
+    public float acceleration = 15f;
 
     // Rink boundaries & movement config
     public Vector2 rinkMin, rinkMax;
     [Range(0f, 5f)] public float cornerRadius = 2.5f;
-    public float minSpeed = 1f, maxSpeed = 5f, acceleration = 2f;
-
     // Internal state
     private float currentSpeed;
-    private float heartRate = 60f;
-    private Vector2 currentPosition, targetPosition, lastReceivedPosition = Vector2.negativeInfinity;
+    private int currentHeartRate = 60;
+    private Vector2 currentPosition, lastReceivedPosition = Vector2.negativeInfinity;
 
     // ECG
     private Queue<int> realTimeECGBuffer = new Queue<int>(500);
@@ -41,6 +51,7 @@ public class PlayerController : MonoBehaviour
 
     void Awake()
     {
+        targetPosition = transform.position;
         rb = GetComponent<Rigidbody2D>();
         if (rb == null)
             Debug.LogError("PlayerController requires a Rigidbody2D component.");
@@ -49,6 +60,7 @@ public class PlayerController : MonoBehaviour
     // Setup initial state for real-time control
     public void InitializeRealtime()
     {
+        targetPosition = transform.position; // sync at start
         currentPosition = rb != null ? rb.position : (Vector2)transform.position;
 
         SetupPlayerNumberUI();
@@ -63,10 +75,10 @@ public class PlayerController : MonoBehaviour
         if (numberCanvas == null) return;
 
         numberText = numberCanvas.GetComponentInChildren<TMP_Text>();
-        if (numberText != null && !string.IsNullOrEmpty(playerId))
+        if (numberText != null && !string.IsNullOrEmpty(player_name))
         {
-            string[] parts = playerId.Split('_');
-            numberText.text = (parts.Length > 1 && int.TryParse(parts[1], out int num)) ? num.ToString() : playerId;
+            string[] parts = player_name.Split('_');
+            numberText.text = (parts.Length > 1 && int.TryParse(parts[1], out int num)) ? num.ToString() : player_name;
         }
     }
 
@@ -123,11 +135,24 @@ public class PlayerController : MonoBehaviour
         Debug.DrawLine(clamped, clamped + Vector2.up * 0.5f, Color.magenta, 1f);
     }
 
-    public void UpdateHeartRate(float hr) => heartRate = hr;
+    public void UpdateIMU(IMUData IMU)
+    {
+        // Example: Use the last acceleration reading
+        if (IMU.ArrayAcc?.Count > 0)
+        {
+            var last = IMU.ArrayAcc[^1]; // C# 8+ syntax for last element
+            Vector3 accVec = new Vector3(last.x, last.y, last.z);
+            // Use for tilt, rotation, or speed influence
+        }
+    }
+
+    public void UpdateHeartRate(int hr)
+    {
+        currentHeartRate = hr;
+    }
 
     public void ReceiveECGSample(int sample)
     {
-        Debug.Log($"Received ECG sample: {sample}");
         if (realTimeECGBuffer.Count > 500)
             realTimeECGBuffer.Dequeue();
 
@@ -145,14 +170,35 @@ public class PlayerController : MonoBehaviour
         if (statsPanel != null && statsPanel.activeSelf && statsText != null && statsUpdateTimer >= statsUpdateInterval)
         {
             statsUpdateTimer = 0f;
-            statsText.text = $"HR: {heartRate:F1} bpm\nSpeed: {currentSpeed * 3.6f:F1} km/h\nECG:";
+            statsText.text = $"HR: {currentHeartRate:F1} bpm\nSpeed: {currentSpeed * 3.6f:F1} km/h\nECG:";
         }
+    }
+
+    public void SetTargetPosition(Vector2 newPos)
+    {
+        targetPosition = newPos;
     }
 
     private void UpdateSpeedBasedOnHR()
     {
-        float targetSpeed = Mathf.Lerp(minSpeed, maxSpeed, Mathf.InverseLerp(60f, 180f, heartRate));
-        currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, acceleration * Time.deltaTime);
+
+        // Map HR 60 → 5 km/h, HR 180 → 25 km/h
+        // Normalize HR (60 → 0, 180 → 1)
+        float normalizedHR = Mathf.Clamp01(Mathf.InverseLerp(80f, 180f, currentHeartRate));
+
+        // Apply curve for realism
+        float curvedHR = Mathf.Sqrt(normalizedHR);
+
+        // Convert input values to m/s if needed
+        float minMs = valuesAreInKmh ? minSpeed / 3.6f : minSpeed;
+        float maxMs = valuesAreInKmh ? maxSpeed / 3.6f : maxSpeed;
+
+        // Lerp between speeds in m/s
+        float targetSpeedMs = Mathf.Lerp(minMs, maxMs, curvedHR);
+
+        // Smooth acceleration
+        currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeedMs, acceleration * Time.deltaTime);
+
     }
 
     private void UpdateArrowRotation()
@@ -162,54 +208,65 @@ public class PlayerController : MonoBehaviour
         Vector2 dir = targetPosition - currentPosition;
         float distance = dir.magnitude;
 
-        if (distance > movementThreshold)
+        if (distance > 0.05f)
         {
             lastValidDirection = dir.normalized;
-        }
-
-        if (lastValidDirection.sqrMagnitude > 0.001f)
-        {
             float angle = Mathf.Atan2(lastValidDirection.y, lastValidDirection.x) * Mathf.Rad2Deg;
             arrowPivot.rotation = Quaternion.Euler(0f, 0f, angle - 90f);
-        }
-
-        arrowPivot.gameObject.SetActive(true);
-    }
-
-    private void FixedUpdate()
-    {
-        if (rb == null) return;
-
-        currentPosition = rb.position;
-        float distanceToTarget = Vector2.Distance(currentPosition, targetPosition);
-        Vector2 delta = currentPosition - lastPosition;
-        Debug.Log($"[Movement Δ] {playerId}: {delta.magnitude:F5}");
-
-        if (distanceToTarget > 0.01f)
-        {
-            Vector2 newPos = Vector2.MoveTowards(currentPosition, targetPosition, currentSpeed * Time.fixedDeltaTime);
-            rb.MovePosition(newPos);
-            lastPosition = newPos;
+            arrowPivot.gameObject.SetActive(true);
         }
         else
         {
-            rb.MovePosition(targetPosition);
-            lastPosition = targetPosition;
+
+            arrowPivot.gameObject.SetActive(true);
         }
     }
 
-    void LateUpdate()
+   private void FixedUpdate()
+{
+    if (rb == null) return;
+
+    // Direction to move: toward target if available, else keep last direction
+    Vector2 dir = targetPosition - rb.position;
+    if (dir.magnitude < 0.01f)
     {
-        if (Vector2.Distance(lastPosition, transform.position) < 0.01f)
-            freezeTimer += Time.deltaTime;
-        else
-            freezeTimer = 0f;
-
-        if (freezeTimer > 3f)
-            Debug.LogWarning($"Player {playerId} appears frozen!");
-
-        lastPosition = transform.position;
+        dir = lastValidDirection; // fallback to previous direction
     }
+    else
+    {
+        lastValidDirection = dir.normalized; // update last valid direction
+    }
+
+    dir.Normalize();
+
+    // Calculate movement step based on currentSpeed
+    Vector2 step = dir * currentSpeed * Time.fixedDeltaTime;
+
+    // Move player
+    Vector2 newPos = rb.position + step;
+
+    // Clamp position inside rink boundaries
+    newPos = new Vector2(
+        Mathf.Clamp(newPos.x, rinkMin.x, rinkMax.x),
+        Mathf.Clamp(newPos.y, rinkMin.y, rinkMax.y)
+    );
+
+    rb.MovePosition(newPos);
+    currentPosition = newPos;
+}
+
+            void LateUpdate()
+            {
+                if (Vector2.Distance(lastPosition, transform.position) < 0.01f)
+                    freezeTimer += Time.deltaTime;
+                else
+                    freezeTimer = 0f;
+
+                if (freezeTimer > 3f)
+                    Debug.LogWarning($"Player {player_name} appears frozen!");
+
+                lastPosition = transform.position;
+            }
 
     private void UpdateVisuals()
     {
@@ -223,7 +280,7 @@ public class PlayerController : MonoBehaviour
     {
         if (statsText != null)
         {
-            statsText.text = $"HR: {heartRate:F1} bpm\nSpeed: {currentSpeed * 3.6f:F1} km/h\nECG:";
+            statsText.text = $"HR: {currentHeartRate:F1} bpm\nSpeed: {currentSpeed * 3.6f:F1} km/h\nECG:";
         }
     }
 
@@ -283,6 +340,17 @@ public class PlayerController : MonoBehaviour
             }
             yield return new WaitForSeconds(0.02f); // 50Hz
         }
+    }
+
+    public void UpdateECGFrame(List<int> samples)
+    {
+        if (samples == null || samples.Count == 0) return;
+
+    // Clear previous buffer to reflect the frame
+        realTimeECGBuffer.Clear();
+
+        foreach (var s in samples)
+            realTimeECGBuffer.Enqueue(s);
     }
 
     // Draw rink bounds and corner radius spheres in editor

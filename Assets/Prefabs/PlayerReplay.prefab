@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7425523313143755893}
   - component: {fileID: 4799231699921575210}
   m_Layer: 0
-  m_Name: Player 1
+  m_Name: PlayerReplay
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -82,7 +82,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
-  m_Color: {r: 0, g: 0.0063631316, b: 0.31132078, a: 1}
+  m_Color: {r: 1, g: 0, b: 0, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -169,7 +169,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   statsText: {fileID: 0}
   statsPanel: {fileID: 3390233379074568565, guid: 1c6c1fe7763abe64a8ccd72abc6b6747, type: 3}
-  playerId: 
+  player_name: 
   smoothTime: 1
   minSpeed: 10
   maxSpeed: 30

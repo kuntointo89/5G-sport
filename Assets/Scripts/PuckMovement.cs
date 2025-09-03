@@ -5,6 +5,11 @@ public class PuckMovement : MonoBehaviour
     private Vector3 targetPosition;
     public float lerpSpeed = 10f; // Adjust for responsiveness
 
+    void Start()
+    {
+        targetPosition = transform.position;
+    }
+
     void Update()
     {
         transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * lerpSpeed);

@@ -31,7 +31,7 @@ public static class GPSUtils
     /// <summary>
     /// Gets the average center point (lat, lon) of a collection of GNSS points.
     /// </summary>
-    public static Vector2 GetCenter(List<GNSSPoint> points)
+    public static Vector2 GetCenter<T>(List<T> points, Func<T, double> getLat, Func<T, double> getLon)
     {
         if (points == null || points.Count == 0)
             throw new ArgumentException("GNSS point list is empty or null.");
@@ -41,8 +41,8 @@ public static class GPSUtils
 
         foreach (var p in points)
         {
-            sumLat += p.Latitude;
-            sumLon += p.Longitude;
+            sumLat += getLat(p);
+            sumLon += getLon(p);
         }
 
         return new Vector2((float)(sumLat / points.Count), (float)(sumLon / points.Count));
